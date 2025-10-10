@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmileSpots - Find Your Perfect Spot</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="css/styles.css">
+
+<link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-locatecontrol/v0.43.0/css/font-awesome.min.css' rel='stylesheet' />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <div class="logo">
+            <img src="assets/SmileSpots.png" alt="SmileSpots Logo" class="logo-placeholder">
+        </div>
+        
+        <nav class="nav">
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-list">
+                <li><a href="#about" class="nav-link">ABOUT</a></li>
+                <li><a href="#faqs" class="nav-link">FAQS</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="main">
+    <div class="container">
+        <div class="content-grid">
+
+            <section class="search-panel" aria-labelledby="search-title">
+                <h1 id="search-title" class="search-title">Find your spot</h1>
+                
+                <button class="location-btn" id="locationBtn">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Allow Location
+                </button>
+
+                <form class="search-form" role="search">
+                    <fieldset class="form-section">
+                        <legend class="section-title">Where</legend>
+                        <div class="form-row">
+                            <select class="form-select" id="spotType" aria-label="Spot type">
+                                <option value="">Any Type</option>
+                                <option value="restaurant">Restaurant</option>
+                                <option value="cafe">Cafe</option>
+                                <option value="church">Church</option>
+                                <option value="bar">Bar</option>
+                                <option value="park">Park</option>
+                                <option value="museum">Museum</option>
+                            </select>
+                            
+                            <select class="form-select" id="distance" aria-label="Distance">
+                                <option value="">Distance</option>
+                                <option value="100">100 meters</option>
+                                <option value="500">500 meters</option>
+                                <option value="1000">1,000 meters</option>
+                                <option value="2000">2,000 meters</option>
+                                <option value="5000">5,000 meters</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <select class="form-select" id="subCategory" aria-label="Sub category">
+                                <option value="">Sub Category</option>
+                            </select>
+                            
+                            
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-section">
+                        <legend class="section-title">What</legend>
+                        
+                        <div class="form-row-amenities">
+                            <div class="amenities-container">
+                                <p class="amenities-title">Amenities</p>
+                                <div class="amenities-grid">
+                                    <label class="amenity-item">
+                                        <input type="checkbox" name="amenity" value="wifi">
+                                        <span>Free WiFi</span>
+                                    </label>
+                                    <label class="amenity-item">
+                                        <input type="checkbox" name="amenity" value="parking">
+                                        <span>Parking</span>
+                                    </label>
+                                    <label class="amenity-item">
+                                        <input type="checkbox" name="amenity" value="outdoor">
+                                        <span>Outdoor Seating</span>
+                                    </label>
+                                    <label class="amenity-item">
+                                        <input type="checkbox" name="amenity" value="delivery">
+                                        <span>Delivery</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="vibe-container">
+                                <p class="vibe-title">Vibe</p>
+                                <select class="form-select" id="vibe" aria-label="Vibe">
+                                    <option value="">Any Vibe</option>
+                                    <option value="romantic">Romantic</option>
+                                    <option value="family">Family Friendly</option>
+                                    <option value="trendy">Trendy</option>
+                                    <option value="quiet">Quiet</option>
+                                    <option value="lively">Lively</option>
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-section">
+                        <div class="form-row">
+                            <div class="coordinate-group">
+                                <label for="latitude" class="coordinate-label">Latitude</label>
+                                <input type="number" 
+                                        id="latitude" 
+                                        class="coordinate-input" 
+                                        step="any" 
+                                        placeholder="Enter latitude"
+                                        aria-describedby="lat-help">
+                            </div>
+                            
+                            <div class="coordinate-group">
+                                <label for="longitude" class="coordinate-label">Longitude</label>
+                                <input type="number" 
+                                        id="longitude" 
+                                        class="coordinate-input" 
+                                        step="any" 
+                                        placeholder="Enter longitude"
+                                        aria-describedby="lng-help">
+                            </div>
+                        </div>
+                        <div class="coordinate-help">
+                            <small id="lat-help">Optional: Specify exact location coordinates</small>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </button>
+                </form>
+            </section>
+
+            <section class="map-panel" aria-labelledby="map-title">
+                <h2 id="map-title" class="map-title">Current Map</h2>
+                
+                <div class="map-container">
+                    <div id="map" class="map" role="img" aria-label="Interactive map showing nearby locations"></div>
+                    <div class="map-loading" id="mapLoading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Loading map...
+                    </div>
+                </div>
+                
+                <div class="map-info">
+                    <p class="locations-count">Showing <span id="locationCount">6</span> Locations near your address</p>
+                    <button class="view-full-map-btn" id="viewFullMapBtn">
+                        View Full Map
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<script src="js/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
