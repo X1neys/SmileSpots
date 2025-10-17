@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmileSpots - Admin Dashboard</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> <!-- ADDED Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin-styles.css"> 
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img src="SmileSpots.png" alt="SmileSpots Logo" class="logo-placeholder">
+            </div>
+            
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="../mainFolder/index.html" class="nav-link">Home</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <section id="admin" class="admin-panel">
+            <div class="container">
+                <h1 class="admin-title">SmileSpots Admin Dashboard</h1>
+
+                <div class="feedback-messages" id="feedbackArea"></div>
+
+                <div class="admin-controls">
+                    <button id="showAddFormBtn" class="admin-btn btn-add">
+                        <i class="fas fa-plus"></i> Add New Spot
+                    </button>
+                    <!-- Other controls here -->
+                </div>
+                
+                <!-- Placeholder for future data table/management -->
+                <div class="admin-data-view">
+                    <!-- Data will be loaded here -->
+                    <p class="admin-placeholder-text">Click "Add New Spot" to manage locations. Other administrative features coming soon.</p>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Add New Spot Form - STRUCTURE MODIFIED FOR SIDE-BY-SIDE LAYOUT -->
+    <div class="modal-overlay hidden" id="adminFormModal">
+        <div class="modal-content">
+            <button class="modal-close-btn" id="adminFormClose" aria-label="Close form">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- NEW LAYOUT CONTAINER that supports side-by-side grid -->
+            <div class="container admin-add-layout"> 
+                
+                <!-- Left Panel: Form -->
+                <section class="admin-form-panel" aria-labelledby="add-spot-title">
+                    <h3 id="add-spot-title" class="form-title">Add New Location Details</h3>
+                    
+                    <form id="addSpotForm">
+                        
+                        <div class="form-group">
+                            <label for="spotName">Spot Name</label>
+                            <input type="text" id="spotName" required>
+                        </div>
+        
+                        <div class="form-group">
+                            <label for="spotType">Type</label>
+                            <select id="spotType" required>
+                                <!-- Options populated by admin-script.js -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="spotSubcategory">Subcategory</label>
+                            <select id="spotSubcategory" required>
+                                <!-- Options populated by admin-script.js -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="spotVibe">Vibe ID</label>
+                            <select id="spotVibe" required>
+                                <!-- Options populated by admin-script.js -->
+                            </select>
+                        </div>
+        
+                        <div class="form-group">
+                            <label for="spotDescription">Description</label>
+                            <textarea id="spotDescription" required></textarea>
+                        </div>
+        
+                        <div class="form-group">
+                            <label for="spotImageId">Image ID (Optional, use 0 for none)</label>
+                            <input type="number" id="spotImageId" value="0" step="1">
+                        </div>
+                        
+                        <!-- Visible inputs for coordinates picked from the map -->
+                        <div class="form-group form-row-modal">
+                            <div class="coordinate-group">
+                                <label for="spotLatitudeDisplay">Latitude (Picked from Map)</label>
+                                <input type="text" id="spotLatitudeDisplay" disabled>
+                                <input type="hidden" id="spotLatitude" name="latitude"> <!-- Hidden for submission -->
+                            </div>
+                            <div class="coordinate-group">
+                                <label for="spotLongitudeDisplay">Longitude (Picked from Map)</label>
+                                <input type="text" id="spotLongitudeDisplay" disabled>
+                                <input type="hidden" id="spotLongitude" name="longitude"> <!-- Hidden for submission -->
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="search-btn">Save Spot</button>
+                    </form>
+                </section>
+                
+                <!-- Right Panel: Map Picker -->
+                <section class="map-panel admin-map-panel" aria-labelledby="map-picker-title">
+                    <h3 id="map-picker-title" class="map-title">Pick Location on Map</h3>
+                    <div class="map-container">
+                        <!-- Map container for admin panel - ID used in admin-script.js -->
+                        <div id="adminMap" class="map" role="img" aria-label="Interactive map to select new location coordinates"></div>
+                    </div>
+                    <!-- Added a brief instruction/info area -->
+                    <div class="map-info">
+                        <p>Click on the map to set the location's coordinates.</p>
+                    </div>
+                </section>
+                
+            </div>
+            <!-- END NEW LAYOUT CONTAINER -->
+
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>

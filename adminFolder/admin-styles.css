@@ -1,0 +1,399 @@
+/* * SmileSpots Admin Dashboard Styles 
+ * This file extends or overrides styles from the main styles.css 
+ * for the administrative interface.
+ */
+
+/* ============================================
+    CSS VARIABLES & RESET (Imported/Duplicated from styles.css for consistency)
+    NOTE: In a real environment, you'd likely use a CSS preprocessor or framework
+    to manage variables globally. Duplicating here for self-contained file use.
+============================================ */
+:root {
+    /* Colors */
+    --primary: #6B5B95;        /* Purple */
+    --primary-light: #8A7BB8;
+    --primary-dark: #5A4A85;
+    --accent: #4A90A4;         /* Teal/blue */
+    --accent-light: #5BA0B4;
+    --accent-dark: #3A7A94;
+    --success: #28A745;
+    --warning: #FFC107;
+    --danger: #DC3545;
+
+    /* Neutral Colors */
+    --white: #FFFFFF;
+    --gray-50: #F8F9FA;
+    --gray-100: #E9ECEF;
+    --gray-200: #DEE2E6;
+    --gray-300: #CED4DA;
+    --gray-400: #ADB5BD;
+    --gray-500: #6C757D;
+    --gray-600: #495057;
+    --gray-700: #343A40;
+    --gray-800: #212529;
+    --gray-900: #000000;
+
+    /* Typography */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 2rem;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Borders & Shadows */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    line-height: 1.6;
+    background-color: var(--gray-50);
+    color: var(--gray-700);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+/* ============================================
+    HEADER & NAVIGATION (Simplified from main styles)
+============================================ */
+
+.header {
+    background-color: var(--primary);
+    color: var(--white);
+    padding: var(--spacing-md) 0;
+    box-shadow: var(--shadow-md);
+}
+
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-placeholder {
+    width: 40px; 
+    height: 40px; 
+    border-radius: var(--border-radius-sm);
+}
+
+.nav-list {
+    list-style: none;
+    display: flex;
+}
+
+.nav-link {
+    color: var(--white);
+    text-decoration: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.3s;
+}
+
+.nav-link:hover {
+    background-color: var(--primary-dark);
+}
+
+/* ============================================
+    ADMIN PANEL
+============================================ */
+.admin-panel {
+    background: var(--gray-50);
+    padding: var(--spacing-2xl) 0;
+    margin-top: 0; 
+    border-top: none; 
+    min-height: 80vh; 
+}
+
+.admin-panel .container {
+    background: var(--white);
+    padding: var(--spacing-xl) var(--spacing-2xl);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+.admin-title {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--primary);
+    margin-bottom: var(--spacing-xl);
+    text-align: left; 
+    border-bottom: 2px solid var(--gray-200); 
+    padding-bottom: var(--spacing-sm);
+}
+
+.admin-controls {
+    display: flex;
+    justify-content: flex-start; /* Align to the left */
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.admin-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: var(--font-weight-medium);
+    transition: all 0.3s ease;
+}
+
+.btn-add {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.btn-add:hover {
+    background-color: #218838; /* Darker green */
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.admin-btn i {
+    margin-right: var(--spacing-xs);
+}
+
+.admin-placeholder-text {
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: var(--gray-500);
+    border: 1px dashed var(--gray-300);
+    border-radius: var(--border-radius-md);
+    margin-top: var(--spacing-xl);
+}
+
+/* ============================================
+    MODAL STYLES (New/Modified for Admin Form)
+============================================ */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.3s;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.modal-content {
+    background: var(--white);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+    width: 95%; /* Make it wider to accommodate the map */
+    max-width: 1400px; /* Increased max-width */
+    height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background: none;
+    border: none;
+    font-size: var(--font-size-2xl);
+    color: var(--gray-500);
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: var(--danger);
+}
+
+/* New Layout for Form + Map */
+.admin-add-layout {
+    display: grid;
+    grid-template-columns: 1fr; /* Default: Single column for mobile */
+    gap: var(--spacing-2xl);
+    padding: var(--spacing-lg);
+}
+
+@media (min-width: 900px) {
+    .admin-add-layout {
+        grid-template-columns: 1fr 1fr; /* Two columns for desktop/tablet */
+    }
+}
+
+.admin-form-panel, .admin-map-panel {
+    padding: var(--spacing-lg);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    background: var(--gray-50);
+}
+
+.form-title, .map-title {
+    font-size: var(--font-size-xl);
+    color: var(--primary-dark);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--gray-200);
+    padding-bottom: var(--spacing-sm);
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-600);
+    font-size: var(--font-size-sm);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-base);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(74, 144, 164, 0.2);
+    outline: none;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Coordinates in Form (Row layout) */
+.form-row-modal {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.form-row-modal .coordinate-group {
+    flex: 1;
+}
+
+/* Map Panel Styling */
+.admin-map-panel .map-container {
+    height: 400px; /* Fixed height for the map in the modal */
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+#adminMap {
+    height: 100%;
+    border-radius: var(--border-radius-md);
+}
+
+.map-info {
+    text-align: center;
+    color: var(--gray-500);
+    font-style: italic;
+    font-size: var(--font-size-sm);
+}
+
+/* Overriding the generic search-btn for the modal form submit */
+#addSpotForm .search-btn {
+    width: 100%;
+    margin-top: var(--spacing-lg);
+    background-color: var(--primary);
+    color: var(--white);
+    padding: var(--spacing-md);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#addSpotForm .search-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+
+/* ============================================\r\n
+    FEEDBACK STYLES (Standardized Alerts)
+============================================ */
+.feedback-messages {
+    min-height: 40px; 
+    margin-bottom: var(--spacing-lg);
+    /* Adding a clean style for the area itself */
+    padding: var(--spacing-xs);
+}
+
+.feedback-messages.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-medium);
+}
+
+.feedback-messages.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-medium);
+}
+
+.feedback-messages.loading {
+    background-color: #ffeeba;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-medium);
+}

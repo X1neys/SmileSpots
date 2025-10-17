@@ -291,30 +291,56 @@ if (userLocation && map) {
     }).addTo(map);
 
     // remove previous markers
-    if (!window.markerGroup) {
-        window.markerGroup = L.layerGroup().addTo(map);
-    } else {
-        window.markerGroup.clearLayers();
-    }
+    // remove previous markers
+if (!window.markerGroup) {
+    window.markerGroup = L.layerGroup().addTo(map);
+} else {
+    window.markerGroup.clearLayers();
+}
 
-    // add only markers within radius
-    window.allMarkers.forEach(location => {
-        const distanceKm = Utils.calculateDistance(
-            userLocation.lat, userLocation.lng,
-            location.lat, location.lng
-        );
-        const distanceMeters = distanceKm * 1000;
-
-        if (distanceMeters <= radiusMeters) {
-            const marker = L.marker([location.lat, location.lng])
-                .bindPopup(`
-                    <strong>${location.name}</strong><br>
-                    Type: ${location.type}<br>
-                    Distance: ${Utils.formatDistance(distanceKm)}
-                `);
-            window.markerGroup.addLayer(marker);
-        }
+// remove existing polylines if any
+if (window.userPolylines) {
+    window.userPolylines.forEach(line => {
+        if (map.hasLayer(line)) map.removeLayer(line);
     });
+}
+window.userPolylines = []; // reset array
+
+// add only markers within radius
+// add only markers within radius and draw polyline from user marker
+window.allMarkers.forEach(location => {
+    const distanceKm = Utils.calculateDistance(
+        userLocation.lat, userLocation.lng,
+        location.lat, location.lng
+    );
+    const distanceMeters = distanceKm * 1000;
+
+    if (distanceMeters <= radiusMeters) {
+        const marker = L.marker([location.lat, location.lng])
+            .bindPopup(`
+                <strong>${location.name}</strong><br>
+                Type: ${location.type}<br>
+                Distance: ${Utils.formatDistance(distanceKm)}
+            `);
+        window.markerGroup.addLayer(marker);
+
+        // draw solid polyline from user's marker to this marker
+        const polyline = L.polyline([
+            [userLocation.lat, userLocation.lng],
+            [location.lat, location.lng]
+        ], {
+            color: '#ca1193ff', // red line
+            weight: 3,
+            opacity: 0.7
+        }).addTo(map);
+
+        // store polyline for later removal if needed
+        if (!window.userPolylines) window.userPolylines = [];
+        window.userPolylines.push(polyline);
+    }
+});
+
+
 
     // focus map to radius area
     map.fitBounds(window.userCircle.getBounds());

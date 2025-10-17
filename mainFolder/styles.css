@@ -745,40 +745,244 @@ outline-offset: 2px;
     box-shadow: none;
     border: var(--border-width) solid var(--gray-300);
 }
-
-
-/* === fullscreen map toggle === */
-    .fullscreen-map {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 9999;
-    background: white; /* prevents transparency or overlap flicker */
-    border-radius: 0 !important;
-    }
-
-    .exit-fullscreen-btn {
-    position: fixed;
-    top: 15px;
-    right: 20px;
-    z-index: 100000 !important; /* higher than the map itself */
-    background-color: #6b5b95;
-    color: white;
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 500;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    transition: background 0.2s ease;
-    }
-
-.exit-fullscreen-btn:hover {
-    background-color: #5a4a85;
+}
+/* ============================================
+ADMIN PANEL
+============================================ */
+.admin-panel {
+    background: var(--gray-100);
+    padding: var(--spacing-2xl) 0;
+    margin-top: var(--spacing-xl);
+    border-top: var(--border-width) solid var(--gray-300);
+    min-height: 80vh; 
 }
 
+.admin-title {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--primary-dark);
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+}
 
+.admin-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding: 0 var(--spacing-md);
+}
+
+.data-status {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-700);
+}
+
+.admin-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.btn-add {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.btn-add:hover {
+    background-color: #1e7e34; /* Darker success */
+}
+
+/* Data Table Styling */
+.admin-table-container {
+    padding: var(--spacing-md);
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow-x: auto;
+}
+
+.admin-table-container h3 {
+    font-size: var(--font-size-xl);
+    color: var(--gray-700);
+    margin-bottom: var(--spacing-md);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.data-table th,
+.data-table td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: var(--border-width) solid var(--gray-200);
+}
+
+.data-table th {
+    background-color: var(--gray-50);
+    font-weight: var(--font-weight-bold);
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table tr:hover {
+    background-color: var(--gray-50);
+}
+
+.data-table td:last-child {
+    white-space: nowrap; /* Keep buttons together */
+}
+
+.empty-row {
+    text-align: center !important;
+    font-style: italic;
+    color: var(--gray-500);
+}
+
+/* Action Buttons in Table */
+.data-table td button {
+    margin-right: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.btn-edit {
+    background-color: var(--warning);
+    color: var(--gray-800);
+}
+
+.btn-edit:hover {
+    background-color: #ffda6a;
+}
+
+.btn-delete {
+    background-color: var(--danger);
+    color: var(--white);
+}
+
+.btn-delete:hover {
+    background-color: #bd2130;
+}
+
+/* ============================================
+MODAL STYLES (for Add/Edit Form)
+============================================ */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: var(--spacing-md);
+    opacity: 1;
+    transition: opacity var(--transition-base);
+}
+
+.modal.hidden {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: var(--white);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background: none;
+    border: none;
+    font-size: var(--font-size-2xl);
+    color: var(--gray-500);
+    cursor: pointer;
+}
+
+.modal-content h3 {
+    font-size: var(--font-size-2xl);
+    color: var(--primary);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+/* Layout for coordinate inputs in modal */
+.form-row-modal {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.form-row-modal .coordinate-group {
+    flex: 1;
+}
+
+.modal-content .search-btn {
+    width: 100%;
+    margin-top: var(--spacing-lg);
+}
+
+/* ============================================
+FEEDBACK STYLES
+============================================ */
+.feedback-messages {
+    min-height: 40px; 
+    margin-bottom: var(--spacing-lg);
+}
+
+.alert {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.alert-success {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.alert-warning {
+    background-color: var(--warning);
+    color: var(--gray-900);
+}
+
+.alert-danger {
+    background-color: var(--danger);
+    color: var(--white);
+}
+
+@media (max-width: 768px) {
+    .form-row-modal {
+        flex-direction: column;
+    }
 }
