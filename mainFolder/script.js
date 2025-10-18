@@ -30,25 +30,18 @@ function initializeMap() {
             maxZoom: 16
         }).addTo(map);
         
-        // === major Bacolod City areas (visible only when radius hits them) ===
-window.allMarkers = [
-    { lat: 10.6761, lng: 122.9566, name: "SM City Bacolod", type: "mall" },
-    { lat: 10.6813, lng: 122.9511, name: "The Ruins", type: "heritage" },
-    { lat: 10.6765, lng: 122.9582, name: "Bacolod Public Plaza", type: "park" },
-    { lat: 10.6924, lng: 122.9621, name: "Lopue's East Centre", type: "mall" },
-    { lat: 10.6603, lng: 122.9506, name: "Panaad Park and Stadium", type: "sports" },
-    { lat: 10.7015, lng: 122.9574, name: "Ayala Malls Capitol Central", type: "mall" },
-    { lat: 10.6629, lng: 122.9493, name: "Bacolod Government Center", type: "government" },
-    { lat: 10.6737, lng: 122.9394, name: "BREDCO Port", type: "port" }
-];
+        // Initialize marker group for fetched locations
+        window.markerGroup = L.layerGroup().addTo(map);
+
+        // Fetch locations from server and render markers
+        fetchLocationsAndRender();
 
         
-        // Hide loading indicator
+    // Hide loading indicator
         $('#mapLoading').addClass('hidden');
         
-        // Add some placeholder markers
-        // TODO: Replace with real data from API
-        // addPlaceholderMarkers();
+    // Add some placeholder markers
+    // (Now replaced by fetchLocationsAndRender that loads real data)
         
         console.log('Map initialized successfully');
         
@@ -374,35 +367,103 @@ window.allMarkers.forEach(location => {
  */
 function handleViewFullMap() {
     
-    const mapContainer = document.getElementById('map');
+    // Use the outer .map-container for fullscreen so header, padding and layout remain consistent.
+    const mapEl = document.getElementById('map');
+    const mapContainer = mapEl ? mapEl.closest('.map-container') : document.querySelector('.map-container');
+
+    if (!mapContainer) return;
 
     // if already fullscreen → exit fullscreen
     if (mapContainer.classList.contains('fullscreen-map')) {
         mapContainer.classList.remove('fullscreen-map');
         const exitBtn = document.getElementById('exitFullscreenBtn');
         if (exitBtn) exitBtn.remove();
+        const leafletContainer = document.querySelector('.leaflet-container');
+        if (leafletContainer) leafletContainer.classList.remove('fullscreen-map');
+        // Restore scrolling
+        document.body.style.overflow = '';
+        // remove dynamic top offset
+        mapContainer.style.top = '';
 
-        // restore map size
-        map.invalidateSize();
+        // restore map size after a short delay to allow layout to settle
+        setTimeout(() => map.invalidateSize(), 120);
         return;
     }
 
-    // go fullscreen
+    // go fullscreen by adding class to the outer container
     mapContainer.classList.add('fullscreen-map');
-    map.invalidateSize(); // force leaflet to recalc map dimensions
+    // Calculate header height dynamically and apply as top offset
+    const header = document.querySelector('.header');
+    const headerHeight = header ? header.getBoundingClientRect().height : 95;
+    mapContainer.style.top = `${headerHeight}px`;
 
-    // add exit button
+    // SAVE previous layout-related inline styles so we can restore them on exit
+    const prev = {
+        margin: mapContainer.style.margin || '',
+        left: mapContainer.style.left || '',
+        width: mapContainer.style.width || '',
+        borderRadius: mapContainer.style.borderRadius || ''
+    };
+    mapContainer.dataset.prevStyles = JSON.stringify(prev);
+
+    // Force the container to cover full width (remove side margins) and remove rounded corners
+    mapContainer.style.left = '0';
+    mapContainer.style.margin = '0';
+    mapContainer.style.width = '100%';
+    mapContainer.style.borderRadius = '0';
+    // Also add class to the leaflet container for CSS targeting
+    const leafletContainer = document.querySelector('.leaflet-container');
+    if (leafletContainer) leafletContainer.classList.add('fullscreen-map');
+
+    // Prevent body scrolling while fullscreen
+    document.body.style.overflow = 'hidden';
+
+    // Wait a tick so layout updates, then force leaflet to recalc map dimensions
+    setTimeout(() => map.invalidateSize(), 120);
+
+    // add exit button and position it below the header so it's visible
     const exitBtn = document.createElement('button');
     exitBtn.id = 'exitFullscreenBtn';
     exitBtn.className = 'exit-fullscreen-btn';
     exitBtn.textContent = 'Exit Fullscreen';
+    // position below header
+    exitBtn.style.top = `${headerHeight + 12}px`;
     document.body.appendChild(exitBtn);
+
+    // Add Escape key listener to exit fullscreen
+    function escListener(e) {
+        if (e.key === 'Escape') {
+            exitBtn.click();
+        }
+    }
+    document.addEventListener('keydown', escListener);
 
     // exit when button clicked
     exitBtn.addEventListener('click', () => {
         mapContainer.classList.remove('fullscreen-map');
+        // remove dynamic top offset
+        mapContainer.style.top = '';
+        if (leafletContainer) leafletContainer.classList.remove('fullscreen-map');
+        // Restore previously-saved styles
+        if (mapContainer.dataset.prevStyles) {
+            try {
+                const s = JSON.parse(mapContainer.dataset.prevStyles);
+                mapContainer.style.margin = s.margin || '';
+                mapContainer.style.left = s.left || '';
+                mapContainer.style.width = s.width || '';
+                mapContainer.style.borderRadius = s.borderRadius || '';
+            } catch (err) {
+                // ignore
+            }
+            delete mapContainer.dataset.prevStyles;
+        }
         exitBtn.remove();
-        map.invalidateSize();
+        // Restore scrolling
+        document.body.style.overflow = '';
+        // Remove escape listener
+        document.removeEventListener('keydown', escListener);
+        // Delay invalidate so the DOM has time to revert layout
+        setTimeout(() => map.invalidateSize(), 120);
     });
 }
     
@@ -604,4 +665,69 @@ const Utils = {
 // Export for potential module usage
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { API, Utils };
+}
+
+// ------------------------------------------------------------------
+// FETCH & RENDER LOCATIONS FROM SERVER
+// - Calls mainFolder/getLocations.php and renders markers on the map
+// ------------------------------------------------------------------
+function fetchLocationsAndRender() {
+    // Build URL relative to current site
+    const url = window.location.origin + '/SmileSpots/mainFolder/getLocations.php';
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (!data || data.success !== true) {
+                console.warn('getLocations returned unexpected data', data);
+                updateLocationCount(0);
+                return;
+            }
+
+            const locations = data.locations || [];
+            renderLocations(locations);
+            updateLocationCount(locations.length);
+        })
+        .catch(err => {
+            console.error('Failed to fetch locations:', err);
+            updateLocationCount(0);
+        });
+}
+
+function renderLocations(locations) {
+    if (!map) return;
+
+    // Clear existing markers
+    if (!window.markerGroup) window.markerGroup = L.layerGroup().addTo(map);
+    window.markerGroup.clearLayers();
+
+    locations.forEach(loc => {
+        if (!loc.latitude || !loc.longitude) return;
+
+        const marker = L.marker([loc.latitude, loc.longitude])
+            .bindPopup(`
+                <div class="marker-popup">
+                    <h3>${escapeHtml(loc.name)}</h3>
+                    <p>${escapeHtml(loc.type || '')} ${loc.subcategory ? ' - ' + escapeHtml(loc.subcategory) : ''}</p>
+                    <p>${escapeHtml(loc.description || '')}</p>
+                </div>
+            `);
+
+        window.markerGroup.addLayer(marker);
+    });
+}
+
+// Small helper to avoid inserting raw HTML
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe).replace(/[&<>"'`]/g, function (s) {
+        return ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '`': '&#96;'
+        })[s];
+    });
 }

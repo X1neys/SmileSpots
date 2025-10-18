@@ -131,16 +131,16 @@ height: 95px; /* Slightly increased height */
 }
 
 .logo-placeholder {
-height: 135px;
+height: 90px; /* Reduced to fit header without overlapping */
 width: auto;
-max-width: 430px;
+max-width: 360px;
 object-fit: contain;
 transition: transform var(--transition-fast);
-margin-top: 8px; /* Push logo down slightly */
+margin-top: 4px; /* Smaller offset */
 }
 
 .logo-placeholder:hover {
-transform: scale(1.05);
+    transform: scale(1.05);
 }
 
 /* Responsive logo sizing */
@@ -507,6 +507,58 @@ margin: 0 var(--spacing-xl);
 border-radius: var(--border-radius);
 overflow: hidden;
 box-shadow: var(--shadow-sm);
+}
+
+/* Ensure the map layers render beneath the sticky header */
+.map-container,
+.map {
+    z-index: 0;
+}
+
+/* Make sure the header stays visually on top */
+.header {
+    z-index: 9999;
+}
+
+/* Fullscreen map styles - applied when `.fullscreen-map` is added to #map element */
+.map.fullscreen-map {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Fullscreen applied to the outer container so header and layout remain stable */
+.map-container.fullscreen-map {
+    position: fixed !important;
+    top: 95px !important; /* NOTE: JS will override this inline with header height */
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100% - 95px) !important;
+    z-index: 9998;
+}
+
+/* When fullscreen, ensure popup and controls appear above map but below header */
+.leaflet-container.fullscreen-map .leaflet-control {
+    z-index: 9999;
+}
+
+/* Exit fullscreen button styling */
+.exit-fullscreen-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 10000;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.exit-fullscreen-btn:hover {
+    background: rgba(0,0,0,0.8);
 }
 
 .map {

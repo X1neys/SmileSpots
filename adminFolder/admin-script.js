@@ -9,27 +9,30 @@ const defaultZoom = 13;
 const COORD_PRECISION = 6; // Precision for storing coordinates
 
 
-// --- Lookup Data ---
-// 1. Spot Types (from smilespots_db.sql -> types table)
-const TYPES = [
-    { id: 1, name: 'Restaurant' }, { id: 2, name: 'Cafe' }, { id: 3, name: 'Church' },
-    { id: 4, name: 'Bar' }, { id: 5, name: 'Park' }, { id: 6, name: 'Museum' },
-    { id: 7, name: 'Mall' }, { id: 8, name: 'Secret' }
-];
+// Lookups loaded from server (populated by getLookups.php)
+let LOOKUPS = {
+    types: [],
+    subcategories: [],
+    vibes: [],
+    amenities: []
+};
 
-// 2. Subcategories (from smilespots_db.sql -> subcategories table)
-const SUB_CATEGORIES = [
-    { id: 1, name: 'Filipino' }, { id: 2, name: 'Japanese' }, { id: 3, name: 'Fast food' },
-    { id: 4, name: 'Sea food' }, { id: 5, name: 'Iglesia' }, { id: 6, name: 'Christian' },
-    { id: 7, name: 'Catholic' }, { id: 8, name: 'Baptist' }, { id: 9, name: 'Mormons' },
-    { id: 10, name: 'Amusement Park' }, { id: 11, name: 'Water Park' }, { id: 12, name: 'Greenspace' }
-];
-
-// 3. Vibes (from smilespots_db.sql -> vibes table)
-const VIBES = [
-    { id: 1, name: 'Romantic' }, { id: 2, name: 'Family Friendly' }, { id: 3, name: 'Trendy' },
-    { id: 4, name: 'Historical' }, { id: 5, name: 'Peaceful' }, { id: 6, name: 'Lively' }
-];
+function loadLookups() {
+    return $.getJSON('getLookups.php')
+        .done(function(res) {
+            if (res && res.success) {
+                LOOKUPS.types = res.types || [];
+                LOOKUPS.subcategories = res.subcategories || [];
+                LOOKUPS.vibes = res.vibes || [];
+                LOOKUPS.amenities = res.amenities || [];
+            } else {
+                console.error('Failed to load lookups', res);
+            }
+        })
+        .fail(function(xhr, status, err) {
+            console.error('Failed to fetch lookups:', status, err, xhr.responseText);
+        });
+}
 
 /**
  * Initializes the Leaflet map for the admin interface.
@@ -96,18 +99,28 @@ function populateDropdowns() {
     $vibeSelect.append('<option value="" disabled selected>Select a Vibe</option>');
 
     // Populate Types
-    TYPES.forEach(type => {
-        $typeSelect.append(`<option value="${type.id}">${type.name}</option>`);
+    LOOKUPS.types.forEach(type => {
+        $typeSelect.append(`<option value="${type.type_id}">${type.type_name}</option>`);
     });
 
     // Populate Subcategories
-    SUB_CATEGORIES.forEach(sub => {
-        $subcategorySelect.append(`<option value="${sub.id}">${sub.name}</option>`);
+    LOOKUPS.subcategories.forEach(sub => {
+        $subcategorySelect.append(`<option value="${sub.subcategory_id}">${sub.subcategory_name}</option>`);
     });
     
     // Populate Vibes
-    VIBES.forEach(vibe => {
-        $vibeSelect.append(`<option value="${vibe.id}">${vibe.name}</option>`);
+    LOOKUPS.vibes.forEach(vibe => {
+        $vibeSelect.append(`<option value="${vibe.vibe_id}">${vibe.vibe_name}</option>`);
+    });
+
+    // Populate Amenities as checkboxes
+    const $amenitiesContainer = $('#amenitiesContainer');
+    $amenitiesContainer.empty();
+    LOOKUPS.amenities.forEach(a => {
+        const id = a.amenity_id;
+        const name = a.amenity_name;
+        const checkbox = `<label class="amenity-item"><input type="checkbox" name="amenities[]" value="${id}"> ${name}</label>`;
+        $amenitiesContainer.append(checkbox);
     });
 }
 
@@ -124,11 +137,15 @@ $(document).ready(function() {
     
     // Show Modal functionality
     $('#showAddFormBtn').on('click', function() {
-        $('#adminFormModal').removeClass('hidden'); 
-        // Delay map initialization/invalidation to ensure the container is visible
-        setTimeout(() => {
-            initializeAdminMap();
-        }, 50); 
+        $('#adminFormModal').removeClass('hidden');
+        // Load lookups first, then initialize map and populate selects
+        loadLookups().always(() => {
+            populateDropdowns();
+            // Delay map initialization/invalidation to ensure the container is visible
+            setTimeout(() => {
+                initializeAdminMap();
+            }, 50);
+        });
     });
 
     // Close Modal functionality
@@ -166,6 +183,14 @@ function handleAddSpotFormSubmission() {
         longitude: $('#spotLongitude').val() // Hidden input value
     };
 
+    // Collect selected amenities (array of IDs)
+    const selectedAmenities = $('input[name="amenities[]"]:checked').map(function() {
+        return parseInt($(this).val(), 10);
+    }).get();
+    if (selectedAmenities.length > 0) {
+        spotData.amenities = selectedAmenities;
+    }
+
     // --- CRITICAL CLIENT-SIDE VALIDATION ---
     // Check if coordinates have been set by map click
     if (!spotData.latitude || !spotData.longitude || isNaN(parseFloat(spotData.latitude)) || isNaN(parseFloat(spotData.longitude))) {
@@ -174,7 +199,13 @@ function handleAddSpotFormSubmission() {
     }
     // --- END CRITICAL VALIDATION ---
 
+    // Disable submit button to prevent duplicate submissions and show loading state
+    const $submitBtn = form.find('button[type="submit"]');
+    const originalBtnHtml = $submitBtn.html();
+    $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
     // Send data to the PHP endpoint
+    console.log('Submitting spot data to addItem.php:', spotData);
     $.ajax({
         url: 'addItem.php',
         type: 'POST',
@@ -194,6 +225,9 @@ function handleAddSpotFormSubmission() {
                 $('#adminFormModal').addClass('hidden'); // Hide modal on success
                 if (marker) adminMap.removeLayer(marker); // Clear map marker
 
+                // Restore submit button
+                $submitBtn.prop('disabled', false).html(originalBtnHtml);
+
             } else {
                 // Failure (validation or DB error)
                 let errorMessage = response.message || 'An unknown error occurred.';
@@ -201,12 +235,51 @@ function handleAddSpotFormSubmission() {
                     errorMessage += `<br>Database Error: ${response.sql_error}`;
                 }
                 displayFeedback(errorMessage, 'error');
+
+                // Restore submit button
+                $submitBtn.prop('disabled', false).html(originalBtnHtml);
             }
         },
         error: function(xhr, status, error) {
             // Network or server-side script error
+            console.error("AJAX Error (JSON POST):", status, error, xhr.responseText);
+
+            // If server rejected JSON content-type, try a form-encoded POST as a fallback
+            let serverMsg = '';
+            try { serverMsg = JSON.parse(xhr.responseText).message || ''; } catch (e) { serverMsg = xhr.responseText || ''; }
+
+            if (xhr.status === 400 && (serverMsg.toLowerCase().includes('content-type') || serverMsg.toLowerCase().includes('invalid json') || serverMsg.toLowerCase().includes('invalid content-type'))) {
+                console.log('Retrying submission as application/x-www-form-urlencoded');
+                $.ajax({
+                    url: 'addItem.php',
+                    type: 'POST',
+                    data: $.param(spotData),
+                    success: function(resp2) {
+                        if (resp2 && resp2.success) {
+                            displayFeedback(`Success! Location added with ID: ${resp2.id}`, 'success');
+                            form[0].reset();
+                            $('#spotLatitudeDisplay').val('');
+                            $('#spotLongitudeDisplay').val('');
+                            $('#spotLatitude').val('');
+                            $('#spotLongitude').val('');
+                            $('#adminFormModal').addClass('hidden');
+                            if (marker) adminMap.removeLayer(marker);
+                        } else {
+                            displayFeedback(resp2.message || 'Submission failed on form-encoded retry.', 'error');
+                        }
+                        $submitBtn.prop('disabled', false).html(originalBtnHtml);
+                    },
+                    error: function(xhr2, status2, err2) {
+                        console.error('Fallback POST failed:', status2, err2, xhr2.responseText);
+                        displayFeedback(`AJAX Request Failed. Status: ${status2}, Error: ${err2}`, 'error');
+                        $submitBtn.prop('disabled', false).html(originalBtnHtml);
+                    }
+                });
+                return;
+            }
+
             displayFeedback(`AJAX Request Failed. Status: ${status}, Error: ${error}`, 'error');
-            console.error("AJAX Error:", xhr.responseText);
+            $submitBtn.prop('disabled', false).html(originalBtnHtml);
         }
     });
 }

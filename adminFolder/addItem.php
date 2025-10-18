@@ -66,6 +66,22 @@ $description = trim($data['description'] ?? '');
 // Ensure image_id is handled safely. If missing or invalid, default to 0.
 $image_id = filter_var($data['image_id'] ?? 0, FILTER_VALIDATE_INT);
 $image_id_bind = ($image_id === null || $image_id === false) ? 0 : (int)$image_id;
+// Accept amenities array (optional)
+$amenities = [];
+if (isset($data['amenities']) && is_array($data['amenities'])) {
+    // Sanitize amenity IDs
+    foreach ($data['amenities'] as $aid) {
+        $aid_int = filter_var($aid, FILTER_VALIDATE_INT);
+        if ($aid_int !== false && $aid_int > 0) $amenities[] = (int)$aid_int;
+    }
+} elseif (isset($data['amenities']) && is_string($data['amenities'])) {
+    // If form-encoded, amenities may come as a comma-separated string
+    $parts = preg_split('/[;,\s]+/', $data['amenities']);
+    foreach ($parts as $p) {
+        $aid_int = filter_var($p, FILTER_VALIDATE_INT);
+        if ($aid_int !== false && $aid_int > 0) $amenities[] = (int)$aid_int;
+    }
+}
 
 
 // STEP 5a: REQUIRED FIELD CHECK
@@ -94,6 +110,28 @@ if ($stmt = $conn->prepare($sql)) {
     if ($stmt->execute()) {
         // STEP 6a: SUCCESS RESPONSE
         $location_id = $conn->insert_id;
+        // If amenities provided, insert into junction table
+        if (!empty($amenities)) {
+            // Use transaction to ensure consistency
+            $conn->begin_transaction();
+            $insertAmenSql = 'INSERT INTO location_amenities (location_id, amenity_id) VALUES (?, ?)';
+            if ($insStmt = $conn->prepare($insertAmenSql)) {
+                foreach ($amenities as $amenity_id) {
+                    $insStmt->bind_param('ii', $location_id, $amenity_id);
+                    $insStmt->execute();
+                }
+                $insStmt->close();
+                $conn->commit();
+            } else {
+                // Rollback and report an error if amenity insert preparation fails
+                $conn->rollback();
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Location added but failed to prepare amenity insert.', 'id' => $location_id, 'sql_error' => $conn->error]);
+                $stmt->close();
+                $conn->close();
+                exit();
+            }
+        }
         echo json_encode(['success' => true, 'message' => 'Location added successfully!', 'id' => $location_id]);
     } else {
         // STEP 6b: EXECUTION ERROR
