@@ -17,6 +17,17 @@ let LOOKUPS = {
     amenities: []
 };
 
+// Small helper to escape HTML when injecting values into the DOM
+function escapeHtml(unsafe) {
+    if (!unsafe && unsafe !== 0) return '';
+    return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function loadLookups() {
     return $.getJSON('getLookups.php')
         .done(function(res) {
@@ -137,6 +148,8 @@ $(document).ready(function() {
     
     // Show Modal functionality
     $('#showAddFormBtn').on('click', function() {
+        // Ensure we're not in editing mode when opening Add modal
+        $('#addSpotForm').removeData('editingId');
         $('#adminFormModal').removeClass('hidden');
         // Load lookups first, then initialize map and populate selects
         loadLookups().always(() => {
@@ -161,8 +174,91 @@ $(document).ready(function() {
         $('#spotLatitude').val('');
         $('#spotLongitude').val('');
         $('#addSpotForm')[0].reset(); // Reset form fields
+        // Clear editing state
+        $('#addSpotForm').removeData('editingId');
     });
+
+    // Load management table on page ready
+    loadAdminLocations();
 });
+
+// Load admin locations and render into table
+function loadAdminLocations() {
+    $.getJSON('getAdminLocations.php').done(function(res) {
+        if (res && res.success) {
+            renderLocationsTable(res.locations || []);
+        } else {
+            console.error('Failed to load admin locations', res);
+        }
+    }).fail(function(xhr, status, err) {
+        console.error('Failed to fetch admin locations:', status, err, xhr.responseText);
+    });
+}
+
+function renderLocationsTable(locations) {
+    const $tbody = $('#locationsTable tbody');
+    $tbody.empty();
+    locations.forEach(loc => {
+        const amenityNames = (loc.amenities || []).map(a => a.amenity_name).join(', ');
+        const row = `
+            <tr data-id="${loc.id}">
+                <td>${loc.id}</td>
+                <td>${escapeHtml(loc.name)}</td>
+                <td>${escapeHtml(loc.type_name || '')}</td>
+                <td>${escapeHtml(loc.subcategory_name || '')}</td>
+                <td>${escapeHtml(loc.vibe_name || '')}</td>
+                <td>${escapeHtml(amenityNames)}</td>
+                <td>
+                    <button class="edit-btn" data-id="${loc.id}">Edit</button>
+                    <button class="delete-btn" data-id="${loc.id}">Delete</button>
+                </td>
+            </tr>
+        `;
+        $tbody.append(row);
+    });
+
+    // Attach handlers
+    $('.edit-btn').on('click', function() {
+        const id = $(this).data('id');
+        const location = locations.find(l => l.id == id);
+        if (location) openEditModal(location);
+    });
+    $('.delete-btn').on('click', function() {
+        const id = $(this).data('id');
+        if (!confirm('Delete this location? This action cannot be undone.')) return;
+        const $btn = $(this);
+        const originalText = $btn.text();
+        $btn.prop('disabled', true).text('Deleting...');
+
+        $.ajax({
+            url: 'deleteItem.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: id }),
+            success: function(resp) {
+                if (resp && resp.success) {
+                    // Remove the row from the table immediately
+                    $btn.closest('tr').fadeOut(200, function() { $(this).remove(); });
+                    displayFeedback('Location deleted.', 'success');
+                    // If we were editing this item, clear editing state
+                    const editingId = $('#addSpotForm').data('editingId');
+                    if (editingId && editingId == id) {
+                        $('#addSpotForm').removeData('editingId');
+                        $('#adminFormModal').addClass('hidden');
+                    }
+                } else {
+                    displayFeedback('Delete failed: ' + (resp.message || 'unknown error'), 'error');
+                    $btn.prop('disabled', false).text(originalText);
+                }
+            },
+            error: function(xhr, s, e) {
+                console.error('Delete error', s, e, xhr.responseText);
+                displayFeedback('Delete failed. See console for details.', 'error');
+                $btn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+}
 
 /**
  * Handles the submission of the 'Add New Spot' form.
@@ -204,17 +300,26 @@ function handleAddSpotFormSubmission() {
     const originalBtnHtml = $submitBtn.html();
     $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
-    // Send data to the PHP endpoint
-    console.log('Submitting spot data to addItem.php:', spotData);
+    // Determine if we're editing an existing location
+    const editingId = $('#addSpotForm').data('editingId') || null;
+    let endpoint = 'addItem.php';
+    if (editingId) {
+        endpoint = 'updateItem.php';
+        spotData.id = editingId;
+        console.log('Updating spot id', editingId, spotData);
+    } else {
+        console.log('Submitting spot data to addItem.php:', spotData);
+    }
+
     $.ajax({
-        url: 'addItem.php',
+        url: endpoint,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(spotData),
         success: function(response) {
             // Check for success flag in JSON response
             if (response.success) {
-                displayFeedback(`Success! Location added with ID: ${response.id}`, 'success');
+                displayFeedback(`Success! ${editingId ? 'Updated' : 'Added'} location (ID: ${response.id || ''})`, 'success');
                 
                 // Reset UI after success
                 form[0].reset(); // Clear the form
@@ -227,6 +332,10 @@ function handleAddSpotFormSubmission() {
 
                 // Restore submit button
                 $submitBtn.prop('disabled', false).html(originalBtnHtml);
+
+                // Clear editing state and reload table
+                $('#addSpotForm').removeData('editingId');
+                loadAdminLocations();
 
             } else {
                 // Failure (validation or DB error)
@@ -303,4 +412,36 @@ function displayFeedback(message, type) {
     } else if (type === 'loading') {
         feedbackArea.addClass('loading');
     }
+}
+
+// Prefill modal for editing a location (ensures lookups are loaded)
+function openEditModal(location) {
+    loadLookups().always(function() {
+        // Ensure dropdowns and amenities are rendered
+        populateDropdowns();
+
+        $('#spotName').val(location.name);
+        $('#spotType').val(location.type_id);
+        $('#spotSubcategory').val(location.subcategory_id);
+        $('#spotVibe').val(location.vibe_id);
+        $('#spotDescription').val(location.description || '');
+        $('#spotImageId').val(location.image_id || 0);
+        $('#spotLatitude').val(location.latitude);
+        $('#spotLongitude').val(location.longitude);
+        $('#spotLatitudeDisplay').val(location.latitude);
+        $('#spotLongitudeDisplay').val(location.longitude);
+
+        // Set amenities checkboxes
+        const aIds = (location.amenities || []).map(a => a.amenity_id);
+        $('input[name="amenities[]"]').each(function() {
+            const v = parseInt($(this).val(), 10);
+            $(this).prop('checked', aIds.includes(v));
+        });
+
+        // Store editing id on form element
+        $('#addSpotForm').data('editingId', location.id);
+
+        $('#adminFormModal').removeClass('hidden');
+        setTimeout(() => initializeAdminMap(), 50);
+    });
 }

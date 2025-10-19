@@ -11,7 +11,7 @@
 </head>
 <body>
     <header class="header">
-        <div class="container">
+        <div class="container">     
             <div class="logo">
                 <img src="SmileSpots.png" alt="SmileSpots Logo" class="logo-placeholder">
             </div>
@@ -40,8 +40,25 @@
                 
                 <!-- Placeholder for future data table/management -->
                 <div class="admin-data-view">
-                    <!-- Data will be loaded here -->
-                    <p class="admin-placeholder-text">Click "Add New Spot" to manage locations. Other administrative features coming soon.</p>
+                    <!-- Management table for locations -->
+                    <div id="locationsManagement">
+                        <table id="locationsTable" class="locations-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Subcategory</th>
+                                    <th>Vibe</th>
+                                    <th>Amenities</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by admin-script.js -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>

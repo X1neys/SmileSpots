@@ -48,9 +48,9 @@
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
-    --spacing-md: 1rem;
-    --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
+    --spacing-md: 1.25rem;
+    --spacing-lg: 1.75rem;
+    --spacing-xl: 2.5rem;
     --spacing-2xl: 3rem;
 
     /* Borders & Shadows */
@@ -154,7 +154,8 @@ body {
     display: flex;
     justify-content: flex-start; /* Align to the left */
     align-items: center;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: calc(var(--spacing-lg) * 1.25);
+    gap: var(--spacing-md);
 }
 
 .admin-btn {
@@ -182,7 +183,7 @@ body {
 }
 
 .admin-placeholder-text {
-    padding: var(--spacing-lg);
+    padding: calc(var(--spacing-lg) * 1.25);
     text-align: center;
     color: var(--gray-500);
     border: 1px dashed var(--gray-300);
@@ -246,8 +247,8 @@ body {
 .admin-add-layout {
     display: grid;
     grid-template-columns: 1fr; /* Default: Single column for mobile */
-    gap: var(--spacing-2xl);
-    padding: var(--spacing-lg);
+    gap: calc(var(--spacing-2xl) * 1.1);
+    padding: calc(var(--spacing-lg) * 0.9);
 }
 
 @media (min-width: 900px) {
@@ -257,10 +258,11 @@ body {
 }
 
 .admin-form-panel, .admin-map-panel {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     border: 1px solid var(--gray-200);
     border-radius: var(--border-radius-md);
     background: var(--gray-50);
+    margin-bottom: var(--spacing-lg);
 }
 
 .form-title, .map-title {
@@ -273,7 +275,7 @@ body {
 
 /* Form Styling */
 .form-group {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: calc(var(--spacing-lg) * 0.9);
 }
 
 .form-group label {
@@ -312,7 +314,7 @@ body {
 /* Coordinates in Form (Row layout) */
 .form-row-modal {
     display: flex;
-    gap: var(--spacing-md);
+    gap: calc(var(--spacing-md) * 1.1);
 }
 
 .form-row-modal .coordinate-group {
@@ -321,9 +323,9 @@ body {
 
 /* Map Panel Styling */
 .admin-map-panel .map-container {
-    height: 400px; /* Fixed height for the map in the modal */
+    height: 420px; /* Slightly taller map for breathing room */
     width: 100%;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: calc(var(--spacing-md) * 1.1);
     border: 1px solid var(--gray-300);
     border-radius: var(--border-radius-md);
     overflow: hidden;
@@ -344,7 +346,7 @@ body {
 /* Overriding the generic search-btn for the modal form submit */
 #addSpotForm .search-btn {
     width: 100%;
-    margin-top: var(--spacing-lg);
+    margin-top: calc(var(--spacing-lg) * 1.15);
     background-color: var(--primary);
     color: var(--white);
     padding: var(--spacing-md);
@@ -366,10 +368,23 @@ body {
 ============================================ */
 .feedback-messages {
     min-height: 40px; 
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: calc(var(--spacing-lg) * 0.9);
     /* Adding a clean style for the area itself */
     padding: var(--spacing-xs);
 }
+
+/* Amenities container spacing */
+.amenities-container { display:flex; flex-wrap:wrap; gap: 0.5rem 1rem; margin-top: 0.5rem; }
+.amenity-item { display:inline-block; padding: 0.25rem 0.5rem; background: #fff; border-radius:4px; border:1px solid var(--gray-200); }
+
+/* Management table spacing and nicer rows */
+.locations-table { width:100%; border-collapse: collapse; margin-top: var(--spacing-md); }
+.locations-table th, .locations-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+.locations-table tbody tr:hover { background: var(--gray-50); }
+.locations-table thead th { text-align:left; background: #fafafa; }
+
+/* Add more breathing room around the management area */
+#locationsManagement { margin-top: calc(var(--spacing-lg) * 0.75); }
 
 .feedback-messages.success {
     background-color: #d4edda;
