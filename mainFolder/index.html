@@ -79,26 +79,12 @@
                     <fieldset class="form-section">
                         <legend class="section-title">What</legend>
                         
+
                         <div class="form-row-amenities">
                             <div class="amenities-container">
                                 <p class="amenities-title">Amenities</p>
-                                <div class="amenities-grid">
-                                    <label class="amenity-item">
-                                        <input type="checkbox" name="amenity" value="wifi">
-                                        <span>Free WiFi</span>
-                                    </label>
-                                    <label class="amenity-item">
-                                        <input type="checkbox" name="amenity" value="parking">
-                                        <span>Parking</span>
-                                    </label>
-                                    <label class="amenity-item">
-                                        <input type="checkbox" name="amenity" value="outdoor">
-                                        <span>Outdoor Seating</span>
-                                    </label>
-                                    <label class="amenity-item">
-                                        <input type="checkbox" name="amenity" value="delivery">
-                                        <span>Delivery</span>
-                                    </label>
+                                <div id="amenitiesGrid" class="amenities-grid">
+                                    <!-- Dynamically populated by script.js using adminFolder/getLookups.php -->
                                 </div>
                             </div>
 
@@ -114,6 +100,7 @@
                                 </select>
                             </div>
                         </div>
+                        
                     </fieldset>
 
                     <fieldset class="form-section">
@@ -148,6 +135,9 @@
                         Search
                     </button>
                 </form>
+
+                <!-- Results list (populated by script.js) -->
+                <div id="resultsList" class="results-list" aria-live="polite"></div>
             </section>
 
             <section class="map-panel" aria-labelledby="map-title">

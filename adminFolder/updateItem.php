@@ -41,10 +41,18 @@ if (isset($data['amenities']) && is_array($data['amenities'])) {
     }
 }
 
-$sql = "UPDATE locations SET name=?, type_id=?, subcategory_id=?, latitude=?, longitude=?, vibe_id=?, description=?, image_id=? WHERE id=?";
-if ($stmt = $conn->prepare($sql)) {
-    // Binding types: s(name), i(type_id), i(subcategory_id), d(latitude), d(longitude), i(vibe_id), s(description), i(image_id), i(id)
-    $stmt->bind_param('siiddisii', $name, $type_id, $subcategory_id, $latitude, $longitude, $vibe_id, $description, $image_id, $id);
+// Allow subcategory to be NULL when not provided (>0 required to set)
+if ($subcategory_id && $subcategory_id > 0) {
+    $sql = "UPDATE locations SET name=?, type_id=?, subcategory_id=?, latitude=?, longitude=?, vibe_id=?, description=?, image_id=? WHERE id=?";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('siiddisii', $name, $type_id, $subcategory_id, $latitude, $longitude, $vibe_id, $description, $image_id, $id);
+    }
+} else {
+    $sql = "UPDATE locations SET name=?, type_id=?, subcategory_id=NULL, latitude=?, longitude=?, vibe_id=?, description=?, image_id=? WHERE id=?";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('siddisii', $name, $type_id, $latitude, $longitude, $vibe_id, $description, $image_id, $id);
+    }
+}
     // Note: 's' used mistakenly for description/latitude binding types; ensure binding types match actual types
     if (!$stmt->execute()) {
         http_response_code(500);

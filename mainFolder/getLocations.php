@@ -19,6 +19,16 @@ $result = $conn->query($sql);
 $locations = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
+        // Fetch amenities for this location
+        $amenities = [];
+        $aSql = 'SELECT a.amenity_id, a.amenity_name, a.amenity_slug FROM amenities a JOIN location_amenities la ON a.amenity_id = la.amenity_id WHERE la.location_id = ' . (int)$row['id'];
+        if ($aRes = $conn->query($aSql)) {
+            while ($ar = $aRes->fetch_assoc()) {
+                $amenities[] = $ar;
+            }
+            $aRes->free();
+        }
+
         $locations[] = [
             'id' => (int)$row['id'],
             'name' => $row['name'],
@@ -27,7 +37,8 @@ if ($result) {
             'description' => $row['description'],
             'type' => $row['type_name'],
             'subcategory' => $row['subcategory_name'],
-            'vibe' => $row['vibe_name']
+            'vibe' => $row['vibe_name'],
+            'amenities' => $amenities
         ];
     }
 }
