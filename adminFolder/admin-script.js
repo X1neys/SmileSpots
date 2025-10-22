@@ -133,22 +133,6 @@ function populateDropdowns() {
         const checkbox = `<label class="amenity-item"><input type="checkbox" name="amenities[]" value="${id}"> ${name}</label>`;
         $amenitiesContainer.append(checkbox);
     });
-
-    // Ensure subcategory is only enabled for types that have subcategories (Restaurant, Church, Park)
-    $typeSelect.off('change').on('change', function() {
-        const selectedTypeId = parseInt($(this).val(), 10);
-        const typeObj = LOOKUPS.types.find(t => Number(t.type_id) === Number(selectedTypeId));
-        const typeName = typeObj ? (typeObj.type_name || '').toLowerCase() : '';
-        if (['restaurant', 'church', 'park'].includes(typeName)) {
-            $subcategorySelect.prop('disabled', false);
-        } else {
-            $subcategorySelect.prop('disabled', true);
-            $subcategorySelect.val('');
-        }
-    });
-
-    // Run once to initialize correct state (in case a type is pre-selected)
-    $typeSelect.trigger('change');
 }
 
 

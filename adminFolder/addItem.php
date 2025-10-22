@@ -85,8 +85,7 @@ if (isset($data['amenities']) && is_array($data['amenities'])) {
 
 
 // STEP 5a: REQUIRED FIELD CHECK
-// subcategory is optional for types that don't have subcategories (e.g., cafe, bar, museum)
-if (empty($name) || $type_id === false || $type_id <= 0 || $latitude === null || $longitude === null || $vibe_id === false || empty($description)) {
+if (empty($name) || $type_id === false || $type_id <= 0 || $subcategory_id === false || $latitude === null || $longitude === null || $vibe_id === false || empty($description)) {
     http_response_code(400); // Bad Request
     echo json_encode(['success' => false, 'message' => 'One or more required fields are missing or invalid.']);
     $conn->close();
@@ -95,25 +94,17 @@ if (empty($name) || $type_id === false || $type_id <= 0 || $latitude === null ||
 
 
 // Prepare the SQL statement using placeholders for security (Prepared Statements)
-// If subcategory_id is not present (<=0) insert NULL for subcategory_id
-if ($subcategory_id && $subcategory_id > 0) {
-    $sql = "INSERT INTO locations (name, type_id, subcategory_id, latitude, longitude, vibe_id, description, image_id, date_added) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-} else {
-    $sql = "INSERT INTO locations (name, type_id, subcategory_id, latitude, longitude, vibe_id, description, image_id, date_added) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NOW())";
-}
+$sql = "INSERT INTO locations (name, type_id, subcategory_id, latitude, longitude, vibe_id, description, image_id, date_added) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
 // ------------------------------------------------------------------
 // STEP 6: PREPARE AND EXECUTE INSERT
 // - PREPARE STATEMENT, BIND PARAMETERS, EXECUTE, RETURN JSON
 // ------------------------------------------------------------------
 if ($stmt = $conn->prepare($sql)) {
-    if ($subcategory_id && $subcategory_id > 0) {
-        // Bind parameters: s=string, i=integer, i=integer, d=double/float, d=double, i=integer, s=string, i=integer
-        $stmt->bind_param("siiddisi", $name, $type_id, $subcategory_id, $latitude, $longitude, $vibe_id, $description, $image_id_bind);
-    } else {
-        // subcategory NULL path: name, type_id, latitude, longitude, vibe_id, description, image_id
-        $stmt->bind_param("siddisi", $name, $type_id, $latitude, $longitude, $vibe_id, $description, $image_id_bind);
-    }
+    // Bind parameters: s=string, i=integer, d=double/float
+    // Order: name(s), type_id(i), subcategory_id(i), latitude(d), longitude(d), vibe_id(i), description(s), image_id(i)
+    // Correct type string: "siiddisi"
+    $stmt->bind_param("siiddisi", $name, $type_id, $subcategory_id, $latitude, $longitude, $vibe_id, $description, $image_id_bind);
     
     // Attempt to execute the prepared statement
     if ($stmt->execute()) {
