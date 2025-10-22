@@ -634,6 +634,7 @@ function rankByDistance(locations, ref) {
     const pq = new PriorityQueue((a, b) => a.distance_km - b.distance_km);
     locations.forEach(loc => {
         if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+            // explicit lat/lng order: (lat1, lon1, lat2, lon2)
             loc.distance_km = Utils.calculateDistance(ref.lat, ref.lng, loc.latitude, loc.longitude);
         } else {
             loc.distance_km = Infinity;
@@ -746,7 +747,7 @@ function renderResultsList(locations) {
         if (typeof loc.distance_km === 'number' && isFinite(loc.distance_km)) {
             distanceText = Utils.formatDistance(loc.distance_km);
         } else if (ref && loc.latitude && loc.longitude) {
-            const km = Utils.calculateDistance(ref.lat || ref.lat, ref.lng || ref.lng, loc.latitude, loc.longitude);
+            const km = Utils.calculateDistance(ref.lat, ref.lng, loc.latitude, loc.longitude);
             distanceText = Utils.formatDistance(km);
         }
 
@@ -872,7 +873,7 @@ function filterLocationsFromForm() {
         const radiusMeters = formData.distance;
         results = results.filter(r => {
             if (!r.latitude || !r.longitude) return false;
-            const km = Utils.calculateDistance(refPoint.lat, refPoint.lng, r.latitude, r.longitude);
+        const km = Utils.calculateDistance(refPoint.lat, refPoint.lng, r.latitude, r.longitude);
             return (km * 1000) <= radiusMeters;
         });
     }
