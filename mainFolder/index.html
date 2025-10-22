@@ -55,6 +55,7 @@
                                 <option value="bar">Bar</option>
                                 <option value="park">Park</option>
                                 <option value="museum">Museum</option>
+                                <option value="mall">Mall</option>
                             </select>
                             
                             <select class="form-select" id="distance" aria-label="Distance">
@@ -148,6 +149,11 @@
                         Search
                     </button>
                 </form>
+
+                <!-- Results list: dynamically populated after search -->
+                <div id="resultsList" class="results-list" aria-live="polite">
+                    <!-- Example result cards will be injected here by script.js -->
+                </div>
             </section>
 
             <section class="map-panel" aria-labelledby="map-title">

@@ -2,6 +2,8 @@
 let map = null;
 let userLocation = null;
 let markersGroup = null;
+// store all fetched locations globally for filtering and rendering
+window.allMarkers = window.allMarkers || [];
 
 // jQuery document ready
 $(document).ready(function() {
@@ -13,6 +15,23 @@ $(document).ready(function() {
     
     // TODO: Add any initial data loading or API calls here
 });
+
+// Icon registry: map spot type -> Leaflet Icon
+const ICONS = {};
+function ensureIcons() {
+    if (Object.keys(ICONS).length) return ICONS;
+    const basePath = window.location.origin + '/SmileSpots/assets/';
+    ICONS['restaurant'] = L.icon({ iconUrl: basePath + 'cafeMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['cafe'] = L.icon({ iconUrl: basePath + 'cafeMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['church'] = L.icon({ iconUrl: basePath + 'churchMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['bar'] = L.icon({ iconUrl: basePath + 'barMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['park'] = L.icon({ iconUrl: basePath + 'parkMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['museum'] = L.icon({ iconUrl: basePath + 'museumMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['mall'] = L.icon({ iconUrl: basePath + 'mallMarker.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['default'] = L.icon({ iconUrl: basePath + 'SmileSpots.png', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -36] });
+    ICONS['user'] = L.icon({ iconUrl: basePath + 'youMarker.png', iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -12] });
+    return ICONS;
+}
 
 
 function initializeMap() {
@@ -192,7 +211,8 @@ function requestUserLocation() {
                     }
 
                     // add the new marker only
-                    window.userMarker = L.marker([userLocation.lat, userLocation.lng])
+                    ensureIcons();
+                    window.userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: ICONS['user'] })
                         .bindPopup('Your Location')
                         .openPopup()
                         .addTo(map);
@@ -241,125 +261,7 @@ function requestUserLocation() {
     }
 }
 
-/**
- * Handle search form submission
- * TODO: Integrate with search API
- */
-function handleSearchSubmit(e) {
-    e.preventDefault();
-    
-    const selectedAmenities = [];
-    $('input[name="amenity"]:checked').each(function() {
-        selectedAmenities.push($(this).val());
-    });
-    
-    const formData = {
-        spotType: $('#spotType').val(),
-        subCategory: $('#subCategory').val(),
-        distance: $('#distance').val(),
-        openNow: $('#openNow').val(),
-        amenities: selectedAmenities,
-        vibe: $('#vibe').val(),
-        latitude: $('#latitude').val(),
-        longitude: $('#longitude').val()
-    };
-    
-    console.log('Search form submitted:', formData);// update map circle size based on selected distance
-    // === GEO-FENCE: only show markers within radius ===
-if (userLocation && map) {
-    const distanceMiles = parseFloat($('#distance').val()) || 100;
-    const radiusMeters = distanceMiles ;
-
-    // remove existing circle before creating new
-    if (window.userCircle && map.hasLayer(window.userCircle)) {
-        map.removeLayer(window.userCircle);
-    }
-
-    // draw updated purple circle
-    window.userCircle = L.circle([userLocation.lat, userLocation.lng], {
-        color: '#6B5B95',
-        fillColor: '#6B5B95',
-        fillOpacity: 0.3,
-        radius: radiusMeters
-    }).addTo(map);
-
-    // remove previous markers
-    // remove previous markers
-if (!window.markerGroup) {
-    window.markerGroup = L.layerGroup().addTo(map);
-} else {
-    window.markerGroup.clearLayers();
-}
-
-// remove existing polylines if any
-if (window.userPolylines) {
-    window.userPolylines.forEach(line => {
-        if (map.hasLayer(line)) map.removeLayer(line);
-    });
-}
-window.userPolylines = []; // reset array
-
-// add only markers within radius
-// add only markers within radius and draw polyline from user marker
-window.allMarkers.forEach(location => {
-    const distanceKm = Utils.calculateDistance(
-        userLocation.lat, userLocation.lng,
-        location.lat, location.lng
-    );
-    const distanceMeters = distanceKm * 1000;
-
-    if (distanceMeters <= radiusMeters) {
-        const marker = L.marker([location.lat, location.lng])
-            .bindPopup(`
-                <strong>${location.name}</strong><br>
-                Type: ${location.type}<br>
-                Distance: ${Utils.formatDistance(distanceKm)}
-            `);
-        window.markerGroup.addLayer(marker);
-
-        // draw solid polyline from user's marker to this marker
-        const polyline = L.polyline([
-            [userLocation.lat, userLocation.lng],
-            [location.lat, location.lng]
-        ], {
-            color: '#ca1193ff', // red line
-            weight: 3,
-            opacity: 0.7
-        }).addTo(map);
-
-        // store polyline for later removal if needed
-        if (!window.userPolylines) window.userPolylines = [];
-        window.userPolylines.push(polyline);
-    }
-});
-
-
-
-    // focus map to radius area
-    map.fitBounds(window.userCircle.getBounds());
-}
-
-
-    
-    // Show loading state
-    const searchBtn = $('.search-btn');
-    const originalContent = searchBtn.html();
-    searchBtn.html('<i class="fas fa-spinner fa-spin"></i> Searching...').prop('disabled', true);
-    
-    // Simulate API call
-    // TODO: Replace with actual API integration
-    setTimeout(() => {
-        // Reset button
-        searchBtn.html(originalContent).prop('disabled', false);
-        
-        // TODO: Update map with search results
-        // TODO: Update location count
-        // TODO: Handle empty results
-        
-        console.log('Search completed (simulated)');
-        
-    }, 1500);
-}
+// NOTE: search handling and results rendering moved below to the consolidated implementation
 
 /**
  * Handle view full map button click
@@ -667,6 +569,82 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { API, Utils };
 }
 
+/**
+ * Simple min-heap PriorityQueue for ranking by distance.
+ * Usage: const pq = new PriorityQueue((a,b) => a.distance_km - b.distance_km);
+ * push items, then pop repeatedly to get ascending order.
+ */
+class PriorityQueue {
+    constructor(comparator = (a, b) => a - b) {
+        this._heap = [];
+        this._comparator = comparator;
+    }
+    size() { return this._heap.length; }
+    isEmpty() { return this.size() === 0; }
+    peek() { return this._heap[0]; }
+    push(...values) {
+        values.forEach(value => {
+            this._heap.push(value);
+            this._siftUp();
+        });
+        return this.size();
+    }
+    pop() {
+        const poppedValue = this.peek();
+        const bottom = this.size() - 1;
+        if (bottom > 0) {
+            this._swap(0, bottom);
+        }
+        this._heap.pop();
+        this._siftDown();
+        return poppedValue;
+    }
+    _greater(i, j) {
+        return this._comparator(this._heap[i], this._heap[j]) > 0;
+    }
+    _swap(i, j) {
+        [this._heap[i], this._heap[j]] = [this._heap[j], this._heap[i]];
+    }
+    _siftUp() {
+        let node = this.size() - 1;
+        while (node > 0 && this._greater(Math.floor((node - 1) / 2), node)) {
+            this._swap(node, Math.floor((node - 1) / 2));
+            node = Math.floor((node - 1) / 2);
+        }
+    }
+    _siftDown() {
+        let node = 0;
+        while (
+            (2 * node + 1 < this.size() && this._greater(node, 2 * node + 1)) ||
+            (2 * node + 2 < this.size() && this._greater(node, 2 * node + 2))
+        ) {
+            let maxChild = (2 * node + 2 < this.size() && this._greater(2 * node + 1, 2 * node + 2)) ? 2 * node + 2 : 2 * node + 1;
+            this._swap(node, maxChild);
+            node = maxChild;
+        }
+    }
+}
+
+/**
+ * Rank an array of locations by distance from a reference point.
+ * Adds `distance_km` to each location and returns a new array sorted ascending.
+ */
+function rankByDistance(locations, ref) {
+    if (!ref || !locations || locations.length === 0) return locations || [];
+    const pq = new PriorityQueue((a, b) => a.distance_km - b.distance_km);
+    locations.forEach(loc => {
+        if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+            loc.distance_km = Utils.calculateDistance(ref.lat, ref.lng, loc.latitude, loc.longitude);
+        } else {
+            loc.distance_km = Infinity;
+        }
+        pq.push(loc);
+    });
+    const out = [];
+    while (!pq.isEmpty()) out.push(pq.pop());
+    return out;
+}
+
 // ------------------------------------------------------------------
 // FETCH & RENDER LOCATIONS FROM SERVER
 // - Calls mainFolder/getLocations.php and renders markers on the map
@@ -685,8 +663,18 @@ function fetchLocationsAndRender() {
             }
 
             const locations = data.locations || [];
-            renderLocations(locations);
-            updateLocationCount(locations.length);
+            // normalize numeric lat/lng
+            locations.forEach(loc => {
+                loc.latitude = parseFloat(loc.latitude);
+                loc.longitude = parseFloat(loc.longitude);
+            });
+            window.allMarkers = locations;
+            // If we have a user location or a visible map center, rank by distance
+            const ref = userLocation ? userLocation : (map ? map.getCenter() : null);
+            const ordered = ref ? rankByDistance(locations, { lat: ref.lat, lng: ref.lng }) : locations;
+            renderLocations(ordered);
+            renderResultsList(ordered);
+            updateLocationCount(ordered.length);
         })
         .catch(err => {
             console.error('Failed to fetch locations:', err);
@@ -703,8 +691,12 @@ function renderLocations(locations) {
 
     locations.forEach(loc => {
         if (!loc.latitude || !loc.longitude) return;
+        // choose icon by type or subcategory
+        ensureIcons();
+        const typeKey = (loc.type || '').toString().toLowerCase();
+        const icon = ICONS[typeKey] || ICONS[loc.subcategory] || ICONS['default'];
 
-        const marker = L.marker([loc.latitude, loc.longitude])
+        const marker = L.marker([loc.latitude, loc.longitude], { icon: icon })
             .bindPopup(`
                 <div class="marker-popup">
                     <h3>${escapeHtml(loc.name)}</h3>
@@ -730,4 +722,208 @@ function escapeHtml(unsafe) {
             '`': '&#96;'
         })[s];
     });
+}
+
+// Render a vertical list of result cards (left panel)
+function renderResultsList(locations) {
+    const container = document.getElementById('resultsList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!locations || locations.length === 0) {
+        container.innerHTML = '<p class="no-results">No locations found.</p>';
+        return;
+    }
+
+    locations.forEach((loc, idx) => {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.dataset.index = idx;
+
+        // compute distance from userLocation or map center (use precomputed distance_km when available)
+        const ref = userLocation ? userLocation : (map ? map.getCenter() : null);
+        let distanceText = '';
+        if (typeof loc.distance_km === 'number' && isFinite(loc.distance_km)) {
+            distanceText = Utils.formatDistance(loc.distance_km);
+        } else if (ref && loc.latitude && loc.longitude) {
+            const km = Utils.calculateDistance(ref.lat || ref.lat, ref.lng || ref.lng, loc.latitude, loc.longitude);
+            distanceText = Utils.formatDistance(km);
+        }
+
+        card.innerHTML = `
+            <h4 class="result-name">${escapeHtml(loc.name || 'Unnamed')}</h4>
+            <p class="result-type">${escapeHtml(loc.type || '')} ${loc.subcategory ? ' - ' + escapeHtml(loc.subcategory) : ''}</p>
+            <p class="result-desc">${escapeHtml(loc.description || '')}</p>
+            <div class="result-meta">
+                <span class="result-distance">${distanceText}</span>
+                <button class="result-focus-btn" data-lat="${loc.latitude}" data-lng="${loc.longitude}">Show</button>
+            </div>
+        `;
+
+        // click to focus
+        card.querySelector('.result-focus-btn').addEventListener('click', function() {
+            const lat = parseFloat(this.dataset.lat);
+            const lng = parseFloat(this.dataset.lng);
+            isolateLocationOnMap({ lat, lng, loc });
+        });
+
+        container.appendChild(card);
+    });
+}
+
+// Isolate a single location on the map: zoom to it, open popup, draw polyline from user or center, and highlight card
+function isolateLocationOnMap({ lat, lng, loc }) {
+    if (!map) return;
+
+    // Clear previous highlight
+    document.querySelectorAll('.result-card.active').forEach(el => el.classList.remove('active'));
+
+    // find matching card and mark active
+    const cards = document.querySelectorAll('#resultsList .result-card');
+    cards.forEach(card => {
+        const btn = card.querySelector('.result-focus-btn');
+        if (!btn) return;
+        if (parseFloat(btn.dataset.lat) === parseFloat(lat) && parseFloat(btn.dataset.lng) === parseFloat(lng)) {
+            card.classList.add('active');
+            // scroll into view
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    });
+
+    // Remove existing isolated layers (polyline or marker highlight)
+    if (window.isolatedLayer && map.hasLayer(window.isolatedLayer)) {
+        map.removeLayer(window.isolatedLayer);
+    }
+
+    // add a temporary highlighted marker
+    const highlight = L.circleMarker([lat, lng], {
+        radius: 8,
+        color: '#2a9df4',
+        weight: 2,
+        fillColor: '#ffffff',
+        fillOpacity: 1
+    }).addTo(map).bindPopup(`<strong>${escapeHtml(loc.name || '')}</strong>`).openPopup();
+
+    window.isolatedLayer = highlight;
+
+    // remove previous polylines
+    if (window.userPolylines) {
+        window.userPolylines.forEach(line => { if (map.hasLayer(line)) map.removeLayer(line); });
+    }
+    window.userPolylines = [];
+
+    // draw a route from user location or map center
+    const from = userLocation ? [userLocation.lat, userLocation.lng] : (map ? [map.getCenter().lat, map.getCenter().lng] : null);
+    if (from) {
+        const route = L.polyline([from, [lat, lng]], { color: '#ca1193ff', weight: 3, dashArray: '6,4' }).addTo(map);
+        // keep track so it can be removed on next isolate
+        window.userPolylines.push(route);
+    }
+
+    // center the map to show both points
+    if (from) {
+        const bounds = L.latLngBounds([from, [lat, lng]]);
+        map.fitBounds(bounds.pad(0.2));
+    } else {
+        map.setView([lat, lng], 16);
+    }
+
+    // Update distance in the active card
+    const distKm = from ? Utils.calculateDistance(from[0], from[1], lat, lng) : null;
+    if (distKm !== null) {
+        document.querySelectorAll('#resultsList .result-card').forEach(card => {
+            const btn = card.querySelector('.result-focus-btn');
+            if (!btn) return;
+            if (parseFloat(btn.dataset.lat) === parseFloat(lat) && parseFloat(btn.dataset.lng) === parseFloat(lng)) {
+                const span = card.querySelector('.result-distance');
+                if (span) span.textContent = Utils.formatDistance(distKm);
+            }
+        });
+    }
+}
+
+// Simple client-side filtering used by the search form
+function filterLocationsFromForm() {
+    const selectedAmenities = [];
+    $('input[name="amenity"]:checked').each(function() { selectedAmenities.push($(this).val()); });
+
+    const formData = {
+        spotType: $('#spotType').val(),
+        distance: parseFloat($('#distance').val()) || null,
+        vibe: $('#vibe').val(),
+        latitude: parseFloat($('#latitude').val()) || null,
+        longitude: parseFloat($('#longitude').val()) || null,
+        amenities: selectedAmenities
+    };
+
+    let results = (window.allMarkers || []).slice();
+
+    // filter by type
+    if (formData.spotType) {
+        results = results.filter(r => (r.type || '').toLowerCase() === formData.spotType.toLowerCase());
+    }
+
+    // filter by distance from userLocation or provided coordinates
+    let refPoint = null;
+    if (userLocation) refPoint = userLocation;
+    else if (formData.latitude && formData.longitude) refPoint = { lat: formData.latitude, lng: formData.longitude };
+
+    if (formData.distance && refPoint) {
+        const radiusMeters = formData.distance;
+        results = results.filter(r => {
+            if (!r.latitude || !r.longitude) return false;
+            const km = Utils.calculateDistance(refPoint.lat, refPoint.lng, r.latitude, r.longitude);
+            return (km * 1000) <= radiusMeters;
+        });
+    }
+
+    // TODO: filter by amenities & vibe when data available
+
+    return results;
+}
+
+// Handle search submit: use client-side filter, update markers and results list
+function handleSearchSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const results = filterLocationsFromForm();
+
+    // update markers on map
+    if (!window.markerGroup) window.markerGroup = L.layerGroup().addTo(map);
+    window.markerGroup.clearLayers();
+
+    results.forEach(loc => {
+        ensureIcons();
+        const typeKey = (loc.type || '').toString().toLowerCase();
+        const icon = ICONS[typeKey] || ICONS[loc.subcategory] || ICONS['default'];
+        const marker = L.marker([loc.latitude, loc.longitude], { icon: icon })
+            .bindPopup(`<strong>${escapeHtml(loc.name)}</strong><br>${escapeHtml(loc.type || '')}`);
+        window.markerGroup.addLayer(marker);
+    });
+
+    // rank by distance if possible
+    const ref = userLocation ? userLocation : (map ? map.getCenter() : null);
+    const orderedResults = ref ? rankByDistance(results, { lat: ref.lat, lng: ref.lng }) : results;
+
+    // render list and update count
+    renderResultsList(orderedResults);
+    updateLocationCount(orderedResults.length);
+
+    // draw circle if reference exists
+    const distVal = parseFloat($('#distance').val());
+    if ((userLocation || ($('#latitude').val() && $('#longitude').val())) && distVal) {
+        const center = userLocation ? [userLocation.lat, userLocation.lng] : [parseFloat($('#latitude').val()), parseFloat($('#longitude').val())];
+        if (window.userCircle && map.hasLayer(window.userCircle)) map.removeLayer(window.userCircle);
+        window.userCircle = L.circle(center, { color: '#6B5B95', fillColor: '#6B5B95', fillOpacity: 0.2, radius: distVal }).addTo(map);
+        map.fitBounds(window.userCircle.getBounds());
+    } else if (results.length > 0) {
+        const bounds = results.map(r => [r.latitude, r.longitude]);
+        map.fitBounds(bounds);
+    }
+
+    // brief loading state on button
+    const searchBtn = $('.search-btn');
+    const originalContent = searchBtn.html();
+    searchBtn.html('<i class="fas fa-spinner fa-spin"></i> Searching...').prop('disabled', true);
+    setTimeout(() => { searchBtn.html(originalContent).prop('disabled', false); }, 600);
 }

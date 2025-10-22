@@ -17,6 +17,67 @@ let LOOKUPS = {
     amenities: []
 };
 
+// Type -> allowed subcategory names (lowercased). Because subcategories are stored without a type FK,
+// we maintain this mapping here. Update if you add/remove subcategories in the DB.
+const TYPE_TO_SUBCATS = {
+    'restaurant': ['filipino', 'japanese', 'fast food', 'sea food'],
+    'church': ['iglesia', 'christian', 'catholic', 'baptist', 'mormons'],
+    'park': ['amusement park', 'water park', 'greenspace']
+    // other types (cafe, bar, museum, mall, secret) do not have specific subcategories in this mapping
+};
+
+// Helper: get type name from LOOKUPS.types by id
+function getTypeNameById(typeId) {
+    if (!typeId) return null;
+    const t = LOOKUPS.types.find(tt => String(tt.type_id) === String(typeId));
+    return t ? t.type_name : null;
+}
+
+// Update subcategory options based on selected type id
+function updateSubcategoryOptions(selectedTypeId) {
+    const $subcategorySelect = $('#spotSubcategory');
+    const $typeSelect = $('#spotType');
+
+    // remove any existing inline note
+    $('#subcatNote').remove();
+
+    if (!selectedTypeId) {
+        // no selection: enable full list
+        $subcategorySelect.prop('disabled', false);
+        $subcategorySelect.empty();
+        $subcategorySelect.append('<option value="" disabled selected>Select a Subcategory</option>');
+        LOOKUPS.subcategories.forEach(sub => {
+            $subcategorySelect.append(`<option value="${sub.subcategory_id}">${sub.subcategory_name}</option>`);
+        });
+        return;
+    }
+
+    const typeName = getTypeNameById(selectedTypeId);
+    const allowed = typeName ? TYPE_TO_SUBCATS[typeName.toString().toLowerCase()] : null;
+
+    if (!allowed || !Array.isArray(allowed) || allowed.length === 0) {
+        // No subcategories for this type: disable select and show a note
+        $subcategorySelect.prop('disabled', true);
+        $subcategorySelect.val('');
+        // append a small inline note if not present
+        const note = $('<div id="subcatNote" class="subcat-note" style="margin-top:.5rem;color:#6c757d;font-size:.9rem;">No subcategories available for the selected Type.</div>');
+        $typeSelect.closest('.form-group').after(note);
+        return;
+    }
+
+    // Filter LOOKUPS.subcategories to only the allowed names (case-insensitive)
+    const allowedSet = new Set(allowed.map(s => s.toString().toLowerCase()));
+    const filtered = LOOKUPS.subcategories.filter(sub => allowedSet.has(sub.subcategory_name.toString().toLowerCase()));
+
+    // Rebuild select
+    $subcategorySelect.prop('disabled', false);
+    $subcategorySelect.empty();
+    $subcategorySelect.append('<option value="" disabled selected>Select a Subcategory</option>');
+    filtered.forEach(sub => {
+        $subcategorySelect.append(`<option value="${sub.subcategory_id}">${sub.subcategory_name}</option>`);
+    });
+}
+
 // Small helper to escape HTML when injecting values into the DOM
 function escapeHtml(unsafe) {
     if (!unsafe && unsafe !== 0) return '';
@@ -133,6 +194,10 @@ function populateDropdowns() {
         const checkbox = `<label class="amenity-item"><input type="checkbox" name="amenities[]" value="${id}"> ${name}</label>`;
         $amenitiesContainer.append(checkbox);
     });
+
+    // After populating, ensure subcategory options respect the current type selection (if any)
+    const currentType = $typeSelect.val();
+    updateSubcategoryOptions(currentType);
 }
 
 
@@ -159,6 +224,12 @@ $(document).ready(function() {
                 initializeAdminMap();
             }, 50);
         });
+    });
+
+    // When the type changes, update the subcategory options and show inline note if needed
+    $(document).on('change', '#spotType', function() {
+        const selected = $(this).val();
+        updateSubcategoryOptions(selected);
     });
 
     // Close Modal functionality
@@ -422,7 +493,9 @@ function openEditModal(location) {
 
         $('#spotName').val(location.name);
         $('#spotType').val(location.type_id);
-        $('#spotSubcategory').val(location.subcategory_id);
+    // Update subcategory options to match selected type, then set the stored value
+    updateSubcategoryOptions(location.type_id);
+    $('#spotSubcategory').val(location.subcategory_id);
         $('#spotVibe').val(location.vibe_id);
         $('#spotDescription').val(location.description || '');
         $('#spotImageId').val(location.image_id || 0);
