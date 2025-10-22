@@ -25,7 +25,7 @@ if (!$id) {
 
 $name = trim($data['name'] ?? '');
 $type_id = filter_var($data['type_id'] ?? 0, FILTER_VALIDATE_INT);
-$subcategory_id = filter_var($data['subcategory_id'] ?? 0, FILTER_VALIDATE_INT);
+$subcategory_id = isset($data['subcategory_id']) ? filter_var($data['subcategory_id'], FILTER_VALIDATE_INT) : null;
 $latitude = isset($data['latitude']) ? filter_var($data['latitude'], FILTER_VALIDATE_FLOAT) : null;
 $longitude = isset($data['longitude']) ? filter_var($data['longitude'], FILTER_VALIDATE_FLOAT) : null;
 $vibe_id = filter_var($data['vibe_id'] ?? 0, FILTER_VALIDATE_INT);
@@ -41,10 +41,13 @@ if (isset($data['amenities']) && is_array($data['amenities'])) {
     }
 }
 
-$sql = "UPDATE locations SET name=?, type_id=?, subcategory_id=?, latitude=?, longitude=?, vibe_id=?, description=?, image_id=? WHERE id=?";
+// Use NULLIF(?,0) to store SQL NULL when subcategory is missing (we pass 0 in that case)
+$sql = "UPDATE locations SET name=?, type_id=?, subcategory_id= NULLIF(?,0), latitude=?, longitude=?, vibe_id=?, description=?, image_id=? WHERE id=?";
 if ($stmt = $conn->prepare($sql)) {
+    // Prepare safe bind values; allow NULL for subcategory
+    $subcategory_bind = (is_null($subcategory_id) || $subcategory_id === false) ? 0 : (int)$subcategory_id;
     // Binding types: s(name), i(type_id), i(subcategory_id), d(latitude), d(longitude), i(vibe_id), s(description), i(image_id), i(id)
-    $stmt->bind_param('siiddisii', $name, $type_id, $subcategory_id, $latitude, $longitude, $vibe_id, $description, $image_id, $id);
+    $stmt->bind_param('siiddisii', $name, $type_id, $subcategory_bind, $latitude, $longitude, $vibe_id, $description, $image_id, $id);
     // Note: 's' used mistakenly for description/latitude binding types; ensure binding types match actual types
     if (!$stmt->execute()) {
         http_response_code(500);

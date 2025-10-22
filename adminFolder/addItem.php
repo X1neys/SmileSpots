@@ -58,7 +58,7 @@ if (json_last_error() !== JSON_ERROR_NONE || empty($data)) {
 // ------------------------------------------------------------------
 $name = trim($data['name'] ?? '');
 $type_id = filter_var($data['type_id'] ?? 0, FILTER_VALIDATE_INT);
-$subcategory_id = filter_var($data['subcategory_id'] ?? 0, FILTER_VALIDATE_INT);
+$subcategory_id = isset($data['subcategory_id']) ? filter_var($data['subcategory_id'], FILTER_VALIDATE_INT) : null;
 $latitude = isset($data['latitude']) ? filter_var($data['latitude'], FILTER_VALIDATE_FLOAT) : null;
 $longitude = isset($data['longitude']) ? filter_var($data['longitude'], FILTER_VALIDATE_FLOAT) : null;
 $vibe_id = filter_var($data['vibe_id'] ?? 0, FILTER_VALIDATE_INT);
@@ -85,7 +85,8 @@ if (isset($data['amenities']) && is_array($data['amenities'])) {
 
 
 // STEP 5a: REQUIRED FIELD CHECK
-if (empty($name) || $type_id === false || $type_id <= 0 || $subcategory_id === false || $latitude === null || $longitude === null || $vibe_id === false || empty($description)) {
+// Note: subcategory is optional (nullable). Accept null/absent subcategory and store NULL in DB.
+if (empty($name) || $type_id === false || $type_id <= 0 || $latitude === null || $longitude === null || $vibe_id === false || empty($description)) {
     http_response_code(400); // Bad Request
     echo json_encode(['success' => false, 'message' => 'One or more required fields are missing or invalid.']);
     $conn->close();
@@ -94,17 +95,21 @@ if (empty($name) || $type_id === false || $type_id <= 0 || $subcategory_id === f
 
 
 // Prepare the SQL statement using placeholders for security (Prepared Statements)
-$sql = "INSERT INTO locations (name, type_id, subcategory_id, latitude, longitude, vibe_id, description, image_id, date_added) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+// Use NULLIF(?,0) so that a passed 0 becomes SQL NULL for subcategory
+$sql = "INSERT INTO locations (name, type_id, subcategory_id, latitude, longitude, vibe_id, description, image_id, date_added) VALUES (?, ?, NULLIF(?,0), ?, ?, ?, ?, ?, NOW())";
 
 // ------------------------------------------------------------------
 // STEP 6: PREPARE AND EXECUTE INSERT
 // - PREPARE STATEMENT, BIND PARAMETERS, EXECUTE, RETURN JSON
 // ------------------------------------------------------------------
+// Prepare sanitized bind values; pass 0 when missing so NULLIF(?,0) will set SQL NULL
+$subcategory_bind = (is_null($subcategory_id) || $subcategory_id === false) ? 0 : (int)$subcategory_id;
+
 if ($stmt = $conn->prepare($sql)) {
     // Bind parameters: s=string, i=integer, d=double/float
     // Order: name(s), type_id(i), subcategory_id(i), latitude(d), longitude(d), vibe_id(i), description(s), image_id(i)
     // Correct type string: "siiddisi"
-    $stmt->bind_param("siiddisi", $name, $type_id, $subcategory_id, $latitude, $longitude, $vibe_id, $description, $image_id_bind);
+    $stmt->bind_param("siiddisi", $name, $type_id, $subcategory_bind, $latitude, $longitude, $vibe_id, $description, $image_id_bind);
     
     // Attempt to execute the prepared statement
     if ($stmt->execute()) {
