@@ -1086,3 +1086,17 @@ FEEDBACK STYLES
         flex-direction: column;
     }
 }
+
+/* Label for per-segment weights on polylines */
+.segment-weight-label {
+    pointer-events: none; /* non-interactive */
+    background: rgba(255, 255, 255, 0.65);
+    color: #cd35d2;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1;
+    box-shadow: 0 1px 4px rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+}
+.segment-weight-label span { display: inline-block; }
