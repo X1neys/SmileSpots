@@ -819,6 +819,32 @@ function isolateLocationOnMap({ lat, lng, loc }) {
         const route = L.polyline([from, [lat, lng]], { color: '#ca1193ff', weight: 3, dashArray: '6,4' }).addTo(map);
         // keep track so it can be removed on next isolate
         window.userPolylines.push(route);
+        // remove previous per-segment labels
+        if (window.userPolylineLabels && window.userPolylineLabels.length) {
+            window.userPolylineLabels.forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+        }
+        window.userPolylineLabels = [];
+
+        // Add a weight label per segment (for now weight = distance of segment)
+        try {
+            const latlngs = route.getLatLngs();
+            for (let i = 0; i < latlngs.length - 1; i++) {
+                const a = latlngs[i];
+                const b = latlngs[i+1];
+                const segKm = Utils.calculateDistance(a.lat, a.lng, b.lat, b.lng);
+                const weightText = Utils.formatDistance(segKm);
+                // midpoint
+                const midLat = (a.lat + b.lat) / 2;
+                const midLng = (a.lng + b.lng) / 2;
+                const label = L.marker([midLat, midLng], {
+                    interactive: false,
+                    icon: L.divIcon({ className: 'segment-weight-label', html: `<span>${weightText}</span>` })
+                }).addTo(map);
+                window.userPolylineLabels.push(label);
+            }
+        } catch (err) {
+            console.warn('Failed to add segment weight labels', err);
+        }
     }
 
     // center the map to show both points
